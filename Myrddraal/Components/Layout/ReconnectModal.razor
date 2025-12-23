@@ -1,0 +1,56 @@
+﻿<div id="components-reconnect-modal" class="my-reconnect-modal components-reconnect-hide">
+    <div class="show">
+        <div class="mud-paper mud-elevation-4 pa-4" style="background:#1a1a1a; color:white; border:1px solid #ff0000; width:300px; margin:auto; margin-top:20%;">
+            <h3 style="font-family:'Courier New'; color:red;">SIGNAL LOST</h3>
+            <p>Re-establishing shadow link...</p>
+            <div class="loader"></div>
+        </div>
+    </div>
+    <div class="failed">
+        <div class="mud-paper mud-elevation-4 pa-4" style="background:#1a1a1a; color:white; border:1px solid #ff0000; width:300px; margin:auto; margin-top:20%;">
+            <h3 style="font-family:'Courier New'; color:red;">LINK SEVERED</h3>
+            <p>The connection to the server has been terminated.</p>
+            <button onclick="window.location.reload()" style="background:#333; color:white; border:1px solid white; padding:5px 10px;">RETRY</button>
+        </div>
+    </div>
+    <div class="rejected">
+        <div class="mud-paper mud-elevation-4 pa-4" style="background:#1a1a1a; color:white; border:1px solid #ff0000; width:300px; margin:auto; margin-top:20%;">
+            <h3 style="font-family:'Courier New'; color:red;">ACCESS DENIED</h3>
+            <p>Server rejected the connection.</p>
+            <button onclick="window.location.reload()" style="background:#333; color:white; border:1px solid white; padding:5px 10px;">RETRY</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .my-reconnect-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 9999;
+        display: none;
+    }
+
+    .components-reconnect-show .my-reconnect-modal {
+        display: block;
+    }
+
+    .components-reconnect-show .show {
+        display: block;
+    }
+
+    .components-reconnect-failed .failed {
+        display: block;
+    }
+
+    .components-reconnect-rejected .rejected {
+        display: block;
+    }
+
+    .show, .failed, .rejected {
+        display: none;
+    }
+</style>

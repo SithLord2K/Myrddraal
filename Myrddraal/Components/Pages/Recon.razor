@@ -1,0 +1,201 @@
+﻿@page "/recon"
+@using Myrddraal.Services
+@using System.Runtime.InteropServices
+@inject BladeRunner Blade
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Class="mb-4" Style="font-family:'Courier New'; color: #e0e0e0;">
+    > THAKAN'DAR BLADES // RECON_UNIT
+</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #333; background: #0a0a0a;">
+
+            <MudText Typo="Typo.subtitle2" Class="mb-4" Style="color: #888;">TARGET ACQUISITION</MudText>
+
+            <MudTextField @bind-Value="_target"
+                          Label="TARGET IDENTIFIER"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.GpsFixed"
+                          Class="mb-4" />
+
+            <MudSelect T="string" Label="SELECT INTEL TOOL" @bind-Value="_selectedTool" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                <MudSelectItem Value="@("ping")">PING SWEEP (ICMP)</MudSelectItem>
+                <MudSelectItem Value="@("nmap")">NMAP STEALTH SCAN (-sS)</MudSelectItem>
+                <MudSelectItem Value="@("traceroute")">TRACE ROUTE</MudSelectItem>
+                <MudSelectItem Value="@("whois")">WHOIS LOOKUP</MudSelectItem>
+            </MudSelect>
+
+            <MudTextField @bind-Value="_customArgs"
+                          Label="CUSTOM ARGUMENTS (Optional)"
+                          Variant="Variant.Outlined"
+                          Class="mt-4"
+                          Placeholder="-p 80,443 -v" />
+
+            <div class="d-flex gap-4 mt-6">
+                <MudButton Variant="Variant.Filled"
+                           Color="MudBlazor.Color.Info"
+                           FullWidth="true"
+                           Size="MudBlazor.Size.Large"
+                           StartIcon="@Icons.Material.Filled.Radar"
+                           OnClick="RunScan"
+                           Disabled="_isRunning">
+                    @(_isRunning ? "SCANNING..." : "INITIATE SCAN")
+                </MudButton>
+            </div>
+
+            @if (_isWindows && _selectedTool == "whois")
+            {
+                <MudAlert Severity="Severity.Warning" Class="mt-2" Dense="true">
+                    WARNING: 'whois' requires 3rd party binary on Windows.
+                </MudAlert>
+            }
+        </MudPaper>
+
+        <MudPaper Class="mt-4 pa-4" Elevation="0" Style="border: 1px solid #333; background: #0a0a0a; max-height: 300px; overflow-y: auto;">
+            <MudText Typo="Typo.subtitle2" Class="mb-2" Style="color: #888;">MISSION LOG</MudText>
+            @if (_scanHistory.Any())
+            {
+                <MudList T="ScanResult" Dense="true" Clickable="true">
+                    @foreach (var scan in _scanHistory.AsEnumerable().Reverse())
+                    {
+                        <MudListItem OnClick="@(() => LoadHistory(scan))">
+                            <div class="d-flex justify-space-between">
+                                <MudText Typo="Typo.caption" Color="MudBlazor.Color.Primary">@scan.Tool.ToUpper()</MudText>
+                                <MudText Typo="Typo.caption" Style="color:#666">@scan.Timestamp.ToString("HH:mm:ss")</MudText>
+                            </div>
+                            <MudText Typo="Typo.body2" Style="color:#aaa">@scan.Target</MudText>
+                        </MudListItem>
+                        <MudDivider />
+                    }
+                </MudList>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Style="color: #444;">> NO SCANS RECORDED</MudText>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #333; background: #000; height: 600px; display: flex; flex-direction: column;">
+            <div class="d-flex justify-space-between mb-2">
+                <MudText Typo="Typo.caption" Style="color: #555;">TERMINAL FEED</MudText>
+                <div>
+                    <MudIconButton Icon="@Icons.Material.Filled.Save" Size="MudBlazor.Size.Small" Title="Save to Log" OnClick="SaveToLog" Color="MudBlazor.Color.Inherit" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Clear" Size="MudBlazor.Size.Small" OnClick="@(() => _consoleOutput = "")" Color="MudBlazor.Color.Inherit" />
+                </div>
+            </div>
+
+            <div style="flex-grow: 1; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 14px; color: #2ecc71; white-space: pre-wrap;">
+                @if (string.IsNullOrEmpty(_consoleOutput))
+                {
+                    <span style="color: #444;">> WAITING FOR COMMAND...</span>
+                }
+                else
+                {
+                    @_consoleOutput
+                }
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string _target = "8.8.8.8";
+    private string _selectedTool = "ping";
+    private string _customArgs = "";
+    private string _consoleOutput = "";
+    private bool _isRunning = false;
+    private bool _isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+    // History Tracking
+    private List<ScanResult> _scanHistory = new();
+
+    private class ScanResult
+    {
+        public DateTime Timestamp { get; set; }
+        public string Tool { get; set; } = "";
+        public string Target { get; set; } = "";
+        public string Output { get; set; } = "";
+    }
+
+    private async Task RunScan()
+    {
+        if (string.IsNullOrWhiteSpace(_target))
+        {
+            Snackbar.Add("TARGET REQUIRED", Severity.Error);
+            return;
+        }
+
+        _isRunning = true;
+
+        // Clear previous output for a fresh run (optional, user preference)
+        _consoleOutput = "";
+
+        string actualCommand = _selectedTool;
+        string actualArgs = _customArgs;
+
+        // --- OS TRANSLATION ---
+        if (_isWindows)
+        {
+            if (_selectedTool == "traceroute") actualCommand = "tracert";
+        }
+
+        _consoleOutput += $"> INITIALIZING {_selectedTool.ToUpper()} AGAINST {_target}...\n";
+        StateHasChanged();
+
+        try
+        {
+            if (_selectedTool == "ping" && string.IsNullOrEmpty(_customArgs))
+            {
+                actualArgs = _isWindows ? $"-n 4 {_target}" : $"-c 4 {_target}";
+            }
+            else
+            {
+                actualArgs = $"{_target} {_customArgs}";
+            }
+
+            var result = await Blade.ExecuteBladeAsync(actualCommand, actualArgs);
+
+            _consoleOutput += result;
+            _consoleOutput += "\n> SCAN COMPLETE.\n";
+
+            // Auto-save to history
+            SaveToLog();
+        }
+        catch (Exception ex)
+        {
+            _consoleOutput += $"\n[FATAL ERROR]: {ex.Message}";
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private void SaveToLog()
+    {
+        if (string.IsNullOrWhiteSpace(_consoleOutput)) return;
+
+        var entry = new ScanResult
+        {
+            Timestamp = DateTime.Now,
+            Tool = _selectedTool,
+            Target = _target,
+            Output = _consoleOutput
+        };
+
+        _scanHistory.Add(entry);
+    }
+
+    private void LoadHistory(ScanResult scan)
+    {
+        _consoleOutput = scan.Output;
+        _target = scan.Target;
+        _selectedTool = scan.Tool;
+        // Visual indicator that history was loaded could go here
+    }
+}

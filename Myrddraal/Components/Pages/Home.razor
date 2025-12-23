@@ -1,0 +1,112 @@
+﻿@page "/"
+@using ApexCharts
+
+<PageTitle>Myrddraal | Command</PageTitle>
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12">
+        <MudAlert Severity="Severity.Normal" NoIcon="true" Class="py-1" Style="background:#0a0a0a; border:1px solid #333; color:#aaa; font-family:'Courier New'">
+            > CONNECTED TO SHADOW SERVER... <br />
+            > MASKING IP... <span style="color:#2ecc71">COMPLETE</span><br />
+            > WAITING FOR COMMAND...
+        </MudAlert>
+    </MudItem>
+</MudGrid>
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #333;">
+            <MudText Typo="Typo.caption" Style="color:#555;">ACTIVE BLADES</MudText>
+            <MudText Typo="Typo.h3" Style="color:#fff;">12</MudText>
+            <MudProgressLinear Color="MudBlazor.Color.Primary" Value="40" Class="mt-2" />
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #333;">
+            <MudText Typo="Typo.caption" Style="color:#555;">EYELESS AGENTS</MudText>
+            <MudText Typo="Typo.h3" Style="color:#fff;">842</MudText>
+            <MudProgressLinear Color="MudBlazor.Color.Secondary" Value="85" Class="mt-2" />
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #333;">
+            <MudText Typo="Typo.caption" Style="color:#555;">DATA SIPHONED</MudText>
+            <MudText Typo="Typo.h3" Style="color:#fff;">4.2 TB</MudText>
+            <MudProgressLinear Color="MudBlazor.Color.Primary" Value="60" Class="mt-2" />
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #333;">
+            <MudText Typo="Typo.caption" Style="color:#555;">SHADOW COVERAGE</MudText>
+            <MudText Typo="Typo.h3" Style="color:#2ecc71;">100%</MudText>
+            <MudProgressLinear Color="MudBlazor.Color.Success" Value="100" Class="mt-2" />
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Class="mt-4">
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #333; height: 400px;">
+            <MudText Typo="Typo.h6" Class="mb-4" Style="font-family:'Courier New'">NETWORK TRAFFIC SPIKES</MudText>
+            @if (_heatmapSeries != null)
+            {
+                <ApexChart TItem="HeatMapData" Title="" Options="_chartOptions">
+                    <ApexPointSeries TItem="HeatMapData"
+                                     Items="_heatmapSeries"
+                                     Name="Packets"
+                                     SeriesType="SeriesType.Bar"
+                                     XValue="@(e => e.Time)"
+                                     YValue="@(e => e.Intensity)" />
+                </ApexChart>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #333; height: 400px; overflow-y:auto">
+            <MudText Typo="Typo.h6" Class="mb-2" Style="font-family:'Courier New'">VULNERABLE TARGETS</MudText>
+            <MudList T="string" Dense="true">
+                <MudListItem Icon="@Icons.Material.Filled.BugReport" IconColor="MudBlazor.Color.Primary">
+                    <MudText Typo="Typo.body2">SQL Injection - Port 80</MudText>
+                    <MudText Typo="Typo.caption" Color="MudBlazor.Color.Secondary">192.168.1.55 (Open)</MudText>
+                </MudListItem>
+                <MudListItem Icon="@Icons.Material.Filled.LockOpen" IconColor="MudBlazor.Color.Primary">
+                    <MudText Typo="Typo.body2">Weak SSH Key</MudText>
+                    <MudText Typo="Typo.caption" Color="MudBlazor.Color.Secondary">10.0.0.12 (Brute Force Ready)</MudText>
+                </MudListItem>
+                <MudListItem Icon="@Icons.Material.Filled.Warning" IconColor="MudBlazor.Color.Warning">
+                    <MudText Typo="Typo.body2">Unpatched Windows Server</MudText>
+                    <MudText Typo="Typo.caption" Color="MudBlazor.Color.Secondary">CVE-2025-8842</MudText>
+                </MudListItem>
+            </MudList>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    public class HeatMapData { public string Time { get; set; } = ""; public int Intensity { get; set; } }
+
+    private List<HeatMapData> _heatmapSeries = new();
+    private ApexChartOptions<HeatMapData> _chartOptions = new();
+
+    protected override void OnInitialized()
+    {
+        // Stealth Chart Options (Monochrome)
+        // Note: ApexCharts theme works differently, so we leave Mode.Dark as is.
+        _chartOptions.Theme = new Theme { Mode = Mode.Dark, Palette = PaletteType.Palette1 };
+        _chartOptions.Chart = new Chart { Background = "transparent", Toolbar = new Toolbar { Show = false } };
+        _chartOptions.Xaxis = new XAxis { Labels = new XAxisLabels { Style = new AxisLabelStyle { Colors = "#555" } } };
+        _chartOptions.Yaxis = new List<YAxis> { new YAxis { Labels = new YAxisLabels { Style = new AxisLabelStyle { Colors = "#555" } } } };
+        _chartOptions.Grid = new Grid { BorderColor = "#1f1f1f" };
+
+        var times = new[] { "00:00", "04:00", "08:00", "12:00", "16:00", "20:00" };
+        var r = new Random();
+        foreach (var t in times)
+        {
+            _heatmapSeries.Add(new HeatMapData { Time = t, Intensity = r.Next(10, 100) });
+        }
+    }
+}

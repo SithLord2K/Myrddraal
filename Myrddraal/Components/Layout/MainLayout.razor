@@ -1,0 +1,57 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="_theme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Dense="true" Style="background-color: #050505; border-bottom: 1px solid #1f1f1f;">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="MudBlazor.Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+
+        <MudText Typo="Typo.h6" Class="ml-4" Style="font-family: 'Courier New'; font-weight: bold; letter-spacing: 3px; color: #e0e0e0;">
+            MYRDDRAAL<span style="color: #4a4a4a;"> ATTACK PLATFORM</span>
+        </MudText>
+
+        <MudSpacer />
+
+        <MudChip T="string" Icon="@Icons.Material.Filled.VisibilityOff" Color="MudBlazor.Color.Dark" Variant="Variant.Outlined" Size="MudBlazor.Size.Small" Style="border-color: #333;">
+            CLOAK ACTIVE
+        </MudChip>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Style="background-color: #080808; border-right: 1px solid #1f1f1f;">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent Style="background-color: #000000;">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+    bool _isDarkMode = true;
+
+    // THEME: "The Blight" (Monochrome Dark)
+    MudTheme _theme = new MudTheme()
+    {
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#ffffff",        // Stark White (Bone)
+            Secondary = "#333333",      // Dark Grey (Iron)
+            Tertiary = "#ff0000",       // Blood Red (Alerts only)
+            Background = "#000000",     // Absolute Void
+            Surface = "#0a0a0a",        // Slightly Lighter Void
+            AppbarBackground = "#050505",
+            DrawerBackground = "#080808",
+            TextPrimary = "#d1d1d1",
+            TextSecondary = "#5c5c5c",
+            LinesDefault = "#1f1f1f"
+        }
+    };
+
+    void DrawerToggle() => _drawerOpen = !_drawerOpen;
+}
