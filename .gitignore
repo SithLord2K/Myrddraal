@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Myrddraal/myrddraal.db
+/Myrddraal/myrddraal.db-shm
+/Myrddraal/myrddraal.db-wal
